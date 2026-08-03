@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  MANAGER
+  SUPERVISOR
+  STUDENT
+}
+
+enum Track {
+  MALE
+  FEMALE
+}
+
+model User {
+  id         String   @id @default(cuid())
+  name       String
+  email      String   @unique
+  role       Role
+  track      Track
+  passwordHash String? @map("password_hash")
+  isApproved Boolean  @default(false) @map("is_approved")
+  centerId   String?  @map("center_id")
+  center     Center?  @relation(fields: [centerId], references: [id], onDelete: SetNull)
+
+  @@map("users")
+}
+
+model Center {
+  id       String    @id @default(cuid())
+  name     String
+  track    Track
+  users    User[]
+  students Student[]
+
+  @@map("centers")
+}
+
+model Student {
+  id         String  @id @default(cuid())
+  firstName  String   @map("first_name")
+  fatherName String   @map("father_name")
+  lastName   String   @map("last_name")
+  age        Int
+  phone      String
+  photoUrl   String   @map("photo_url")
+  centerId   String   @map("center_id")
+  track      Track
+  totalPages Int     @default(0) @map("total_pages")
+  totalBooks Int     @default(0) @map("total_books")
+  center     Center  @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  books      Book[]
+
+  @@map("students")
+}
+
+model Book {
+  id                String  @id @default(cuid())
+  studentId         String  @map("student_id")
+  bookTitleOrNumber String  @map("book_title_or_number")
+  pagesCount        Int     @map("pages_count")
+  student           Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@map("books")
+}
+
+model MasterBook {
+  id          String   @id @default(cuid())
+  title       String
+  track       Track
+  pagesCount  Int      @default(0) @map("pages_count")
+  createdById String?  @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([title, track])
+  @@map("master_books")
+}
