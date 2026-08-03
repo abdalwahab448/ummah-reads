@@ -81,7 +81,7 @@ export default function HomePage() {
             transition={{ duration: 0.8, ease: "easeOut" }}
             className="relative flex h-screen min-h-[640px] items-center justify-center overflow-hidden"
           >
-            <VideoWithExternalAudio onFinish={() => setStep(2)} />
+           <VideoWithExternalAudio audioEnabled={true} onFinish={() => setStep(2)} />      
           </motion.div>
         ) : (
           <motion.div
