@@ -2,13 +2,18 @@
 
 import { useState } from "react";
 
-type Student = {
-  rank: number;
-  name: string;
+type LeaderboardStudent = {
+  rank?: number;
+  name?: string;
   father?: string;
   family?: string;
   age?: number;
-  books: number;
+  books?: number | Array<unknown>;
+  firstName?: string;
+  fatherName?: string;
+  lastName?: string;
+  totalBooks?: number;
+  totalPages?: number;
 };
 
 const colors = {
@@ -30,6 +35,12 @@ function toTitleCase(str?: string) {
     .split(" ")
     .map((w) => (w ? w.charAt(0).toUpperCase() + w.slice(1) : ""))
     .join(" ");
+}
+
+function getBookCount(student: LeaderboardStudent) {
+  if (typeof student.books === "number") return student.books;
+  if (Array.isArray(student.books)) return student.books.length;
+  return student.totalBooks ?? 0;
 }
 
 function RosetteAccent({ color, size = 70 }: { color: string; size?: number }) {
@@ -93,7 +104,7 @@ function MiniBookshelf({ count }: { count: number }) {
   );
 }
 
-function BookCard({ student, rank, color, elevated }: { student: Student; rank: number; color: string; elevated?: boolean }) {
+function BookCard({ student, rank, color, elevated }: { student: LeaderboardStudent; rank: number; color: string; elevated?: boolean }) {
   return (
     <div
       style={{
@@ -118,18 +129,18 @@ function BookCard({ student, rank, color, elevated }: { student: Student; rank: 
       <div style={{ position: "relative", zIndex: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
         <BookmarkBadge rank={rank} color={color} />
         <p style={{ color: colors.text, fontSize: elevated ? "15px" : "13px", fontWeight: "bold", marginTop: "10px", marginBottom: "2px", textAlign: "center" }}>
-          {toTitleCase(student.name)}
+          {toTitleCase(student.name ?? [student.firstName, student.lastName].filter(Boolean).join(" "))}
         </p>
-        <p style={{ color: colors.muted, fontSize: "11px", marginBottom: "10px" }}>{student.books} كتاب</p>
-        <MiniBookshelf count={student.books} />
+        <p style={{ color: colors.muted, fontSize: "11px", marginBottom: "10px" }}>{getBookCount(student)} كتاب</p>
+        <MiniBookshelf count={getBookCount(student)} />
       </div>
     </div>
   );
 }
 
-export default function Leaderboard({ students }: { students: Student[] }) {
+export default function Leaderboard({ students }: { students: LeaderboardStudent[] }) {
   const [expandedRow, setExpandedRow] = useState<number | null>(null);
-  const sorted = [...students].sort((a, b) => a.rank - b.rank);
+  const sorted = [...students].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0));
   const top3 = sorted.slice(0, 3);
   const rest = sorted.slice(3);
 
@@ -159,29 +170,32 @@ export default function Leaderboard({ students }: { students: Student[] }) {
           <span>الكتب</span>
         </div>
 
-        {rest.map((s) => (
-          <div key={s.rank}>
-            <div
-              onClick={() => setExpandedRow(expandedRow === s.rank ? null : s.rank)}
-              style={{ display: "grid", gridTemplateColumns: "70px 1fr 140px 100px", padding: "14px 18px", borderBottom: `1px solid ${colors.border}`, color: colors.text, fontSize: "14px", cursor: "pointer", alignItems: "center" }}
-            >
-              <span style={{ color: colors.muted, fontWeight: "700" }}>{s.rank}</span>
-              <span>{toTitleCase(s.name)}</span>
+        {rest.map((s) => {
+          const nextRank = s.rank ?? null;
+          return (
+            <div key={s.rank ?? `${s.name ?? "student"}-${Math.random()}`}>
+              <div
+                onClick={() => setExpandedRow(expandedRow === nextRank ? null : nextRank)}
+                style={{ display: "grid", gridTemplateColumns: "70px 1fr 140px 100px", padding: "14px 18px", borderBottom: `1px solid ${colors.border}`, color: colors.text, fontSize: "14px", cursor: "pointer", alignItems: "center" }}
+              >
+              <span style={{ color: colors.muted, fontWeight: "700" }}>{s.rank ?? 0}</span>
+              <span>{toTitleCase(s.name ?? [s.firstName, s.lastName].filter(Boolean).join(" "))}</span>
               <span style={{ color: colors.muted }}>{/* placeholder for saved parts */}—</span>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end" }}>
-                <MiniBookshelf count={s.books} />
+                <MiniBookshelf count={getBookCount(s)} />
               </div>
             </div>
 
-            {expandedRow === s.rank && (
+            {expandedRow === nextRank && (
               <div style={{ padding: "12px 18px", background: colors.bg, borderBottom: `1px solid ${colors.border}`, fontSize: "13px", color: colors.muted, display: "flex", gap: "24px" }}>
-                <span>اسم الأب: {toTitleCase(s.father)}</span>
+                <span>اسم الأب: {toTitleCase(s.father ?? s.fatherName)}</span>
                 <span>الكنية: {toTitleCase(s.family)}</span>
                 <span>العمر: {s.age}</span>
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
