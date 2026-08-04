@@ -10,30 +10,34 @@ type VideoWithExternalAudioProps = {
 
 export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnableAudio }: VideoWithExternalAudioProps) {
   const [showVideo, setShowVideo] = useState(true);
+  const [showOverlay, setShowOverlay] = useState(true);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  const handleEnableAudio = async () => {
-    if (!audioRef.current) return;
+  const handlePlayBoth = async () => {
+    const video = videoRef.current;
+    const audio = audioRef.current;
+
+    if (!video && !audio) return;
+
+    if (video) {
+      video.muted = false;
+      video.volume = 1;
+    }
+
+    if (audio) {
+      audio.muted = false;
+      audio.volume = 1;
+      audio.currentTime = 0;
+    }
 
     try {
-      await audioRef.current.play();
+      const playPromises = [video?.play?.(), audio?.play?.()].filter((value): value is Promise<void> => Boolean(value));
+      await Promise.all(playPromises);
+      setShowOverlay(false);
       if (onEnableAudio) onEnableAudio();
     } catch (error) {
-      console.warn("Audio playback blocked until user gesture is allowed", error);
-    }
-  };
-
-  const handlePlayBoth = () => {
-    if (videoRef.current) videoRef.current.play();
-
-    if (audioRef.current) {
-      const playPromise = audioRef.current.play();
-      if (playPromise && typeof playPromise.catch === "function") {
-        playPromise.catch(() => {
-          // ignore blocked autoplay; wait for explicit user click
-        });
-      }
+      console.warn("Playback blocked until user interaction is allowed", error);
     }
   };
 
@@ -64,6 +68,7 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
     if (audioRef.current) {
       smoothPauseAudio();
     }
+    setShowOverlay(false);
     setShowVideo(false);
     if (onFinish) onFinish();
   };
@@ -81,11 +86,11 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
     <div className="fixed inset-0 z-50 bg-black flex items-center justify-center">
       <video
         ref={videoRef}
-        autoPlay
-        muted
         playsInline
         loop={false}
-        onPlay={handlePlayBoth}
+        onPlay={() => {
+          setShowOverlay(false);
+        }}
         onEnded={handleEndOrSkip}
         onError={handleEndOrSkip}
         className="w-full h-full object-cover"
@@ -96,9 +101,30 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
 
       <audio ref={audioRef} src="/assets/audio.mp3" preload="auto" />
 
-      {!audioEnabled && (
+      {showOverlay && (
+        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="relative flex flex-col items-center rounded-[2rem] border border-[#d4af37]/40 bg-gradient-to-br from-[#0d231a] via-[#16382b] to-[#0d231a] px-8 py-10 text-center shadow-[0_0_80px_rgba(212,175,55,0.25)]">
+            <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#d4af37] to-[#f7f4ed] text-4xl text-[#0d231a] shadow-lg">
+              ▶
+            </div>
+            <p className="mb-2 text-xl font-semibold text-[#f7f4ed]">ابدأ العرض الآن</p>
+            <p className="mb-6 max-w-xs text-sm leading-6 text-[#d4af37]/90">
+              اضغط للبدء مع الفيديو والصوت معاً وبشكلٍ واضح.
+            </p>
+            <button
+              type="button"
+              onClick={handlePlayBoth}
+              className="rounded-full bg-[#d4af37] px-6 py-3 text-sm font-bold text-[#0d231a] shadow-lg transition hover:scale-105 hover:bg-[#f7f4ed]"
+            >
+              تشغيل الفيديو والصوت
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!audioEnabled && !showOverlay && (
         <button
-          onClick={handleEnableAudio}
+          onClick={handlePlayBoth}
           className="absolute bottom-20 right-6 z-50 rounded-full bg-[#d4af37] px-5 py-3 text-sm font-semibold text-[#0d231a] shadow-lg transition hover:bg-[#f7f4ed]"
         >
           🔊 تشغيل الصوت
