@@ -5,8 +5,8 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "أمتي تقرأ | Ummah Reads",
-  description: "منصة المسابقة القرائية متعددة الأدوار للمشرفين والمدراء ومالك المسابقة.",
+  title: "منصة أمتي تقرأ | منصة مسابقة لقراءة الكتب",
+  description: "منصة أمتي تقرأ - منصة تفاعلية ومسابقة لمتابعة قراءة الكتب وتحديات القراءة.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
