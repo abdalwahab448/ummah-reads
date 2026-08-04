@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   title: "منصة أمتي تقرأ | منصة مسابقة لقراءة الكتب",
   description: "منصة أمتي تقرأ - منصة تفاعلية ومسابقة لمتابعة قراءة الكتب وتحديات القراءة.",
   verification: {
-    google: process.env.GOOGLE_SITE_VERIFICATION || "",
+    google: process.env.GOOGLE_SITE_VERIFICATION || "googleb02223074a5ab93e.html",
   },
 };
 
