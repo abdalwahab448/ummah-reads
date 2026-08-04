@@ -9,15 +9,27 @@ import libraryBg from '../assets/library_bg.jpg';
 
 export default function LandingPage() {
   const [showVideo, setShowVideo] = useState(true);
+  const [hasStarted, setHasStarted] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  // 1. تشغيل الاثنين معاً
-  const handlePlay = () => {
-    if (videoRef.current && audioRef.current) {
-      audioRef.current.currentTime = videoRef.current.currentTime;
-      audioRef.current.play().catch(() => {});
+  const handleStart = async () => {
+    const video = videoRef.current;
+    const audio = audioRef.current;
+
+    if (!video || !audio) return;
+
+    video.muted = false;
+    video.volume = 1;
+    audio.muted = false;
+    audio.volume = 1;
+
+    try {
+      await Promise.all([video.play(), audio.play()]);
+      setHasStarted(true);
+    } catch (error) {
+      console.warn('Playback blocked until user interaction is allowed', error);
     }
   };
 
@@ -53,10 +65,7 @@ export default function LandingPage() {
         <div className="relative w-full max-w-5xl h-[600px] rounded-2xl overflow-hidden border border-[#d4af37]/40 shadow-2xl bg-black flex items-center justify-center">
           <video
             ref={videoRef}
-            autoPlay
-            muted
             playsInline
-            onPlay={handlePlay}
             onPause={handlePause}
             onTimeUpdate={handleTimeUpdate}
             onEnded={handleEnded}
@@ -71,6 +80,27 @@ export default function LandingPage() {
             src="/assets/audio.mp3"
             preload="auto"
           />
+
+          {!hasStarted && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+              <div className="flex flex-col items-center rounded-[2rem] border border-[#d4af37]/40 bg-gradient-to-br from-[#0d231a] via-[#16382b] to-[#0d231a] px-8 py-10 text-center shadow-[0_0_80px_rgba(212,175,55,0.25)]">
+                <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-[#d4af37] to-[#f7f4ed] text-4xl text-[#0d231a] shadow-lg">
+                  ▶
+                </div>
+                <p className="mb-2 text-xl font-semibold text-[#f7f4ed]">ابدأ العرض الآن</p>
+                <p className="mb-6 max-w-xs text-sm leading-6 text-[#d4af37]/90">
+                  اضغط للبدء مع الفيديو والصوت معاً وبشكل واضح.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleStart}
+                  className="rounded-full bg-[#d4af37] px-6 py-3 text-sm font-bold text-[#0d231a] shadow-lg transition hover:scale-105 hover:bg-[#f7f4ed]"
+                >
+                  تشغيل الفيديو والصوت
+                </button>
+              </div>
+            </div>
+          )}
 
           <button
             onClick={handleEnded}
