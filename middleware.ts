@@ -1,6 +1,79 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { ROUTE_RULES, canAccessRoute, normalizeSessionFromCookie } from "@/lib/auth";
+export const runtime = "edge";
+
+type Role = "OWNER" | "MANAGER" | "SUPERVISOR" | "STUDENT";
+type Track = "MALE" | "FEMALE";
+type UserSession = {
+  id: string;
+  name: string;
+  email: string;
+  role: Role;
+  track: Track;
+  isApproved: boolean;
+  centerId: string | null;
+};
+
+type RouteRule = {
+  prefix: string;
+  roles: Role[];
+  trackAware?: boolean;
+};
+
+const ROUTE_RULES: RouteRule[] = [
+  { prefix: "/owner", roles: ["OWNER"] },
+  { prefix: "/manager", roles: ["MANAGER", "OWNER"], trackAware: true },
+  { prefix: "/supervisor", roles: ["SUPERVISOR", "MANAGER", "OWNER"], trackAware: true }
+];
+
+function decodeBase64Url(value: string): string {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+  const binary = atob(normalized + padding);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function normalizeSessionFromCookie(rawValue?: string | null): UserSession | null {
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    const json = decodeBase64Url(rawValue);
+    const session = JSON.parse(json) as UserSession;
+
+    if (!session?.role || !session?.track) {
+      return null;
+    }
+
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function canAccessRoute(session: UserSession, pathname: string): boolean {
+  const rule = ROUTE_RULES.find((item) => pathname.startsWith(item.prefix));
+
+  if (!rule) {
+    return true;
+  }
+
+  if (!rule.roles.includes(session.role)) {
+    return false;
+  }
+
+  if (rule.trackAware && pathname.includes("/male") && session.track !== "MALE") {
+    return session.role === "OWNER";
+  }
+
+  if (rule.trackAware && pathname.includes("/female") && session.track !== "FEMALE") {
+    return session.role === "OWNER";
+  }
+
+  return true;
+}
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
