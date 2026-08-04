@@ -11,10 +11,12 @@ type VideoWithExternalAudioProps = {
 export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnableAudio }: VideoWithExternalAudioProps) {
   const [showVideo, setShowVideo] = useState(true);
   const [showOverlay, setShowOverlay] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const handlePlayBoth = async () => {
+    if (isPlaying) return;
     const video = videoRef.current;
     const audio = audioRef.current;
 
@@ -34,6 +36,7 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
     try {
       const playPromises = [video?.play?.(), audio?.play?.()].filter((value): value is Promise<void> => Boolean(value));
       await Promise.all(playPromises);
+      setIsPlaying(true);
       setShowOverlay(false);
       if (onEnableAudio) onEnableAudio();
     } catch (error) {
@@ -68,6 +71,7 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
     if (audioRef.current) {
       smoothPauseAudio();
     }
+    setIsPlaying(false);
     setShowOverlay(false);
     setShowVideo(false);
     if (onFinish) onFinish();
@@ -89,6 +93,7 @@ export default function VideoWithExternalAudio({ onFinish, audioEnabled, onEnabl
         playsInline
         loop={false}
         onPlay={() => {
+          setIsPlaying(true);
           setShowOverlay(false);
         }}
         onEnded={handleEndOrSkip}
