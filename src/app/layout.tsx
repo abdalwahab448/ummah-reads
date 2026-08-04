@@ -4,9 +4,15 @@ import { Providers } from "@/components/providers";
 
 import "./globals.css";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://example.com";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "منصة أمتي تقرأ | منصة مسابقة لقراءة الكتب",
   description: "منصة أمتي تقرأ - منصة تفاعلية ومسابقة لمتابعة قراءة الكتب وتحديات القراءة.",
+  verification: {
+    google: process.env.GOOGLE_SITE_VERIFICATION || "",
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
